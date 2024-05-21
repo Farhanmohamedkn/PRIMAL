@@ -1,6 +1,8 @@
 import tensorflow as tf
 from ACNet import ACNet
 import numpy as np
+
+import matplotlib.pyplot as plt
 import json
 import os
 import mapf_gym_cap as mapf_gym
@@ -11,6 +13,17 @@ results_path="primal_results"
 environment_path="saved_environments"
 if not os.path.exists(results_path):
     os.makedirs(results_path)
+
+# Load numpy array from .npy file
+data = np.load('/home/noushad/Master Thesis/PRIMAL/saved_environments/4_agents_10_size_0_density_id_0_environment.npy')
+
+
+# Print shape and data type of the array
+print("Shape of the array:", data.shape)
+print("Data type of the array:", data.dtype)
+
+
+
 
 class PRIMAL(object):
     '''

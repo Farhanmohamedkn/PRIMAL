@@ -155,8 +155,8 @@ def observe(data,agent_id,goals):
                 #other agents' positions
                 poss_map[i-top_left[0],j-top_left[1]]=1
                 visible_agents.append(data.state[i,j])                
-    dx=data.agent_goals[agent_id-1][0]-data.agent_positions[agent_id-1][0]
-    dy=data.agent_goals[agent_id-1][1]-data.agent_positions[agent_id-1][1]
+    dx=data.agent_goals[agent_id-1][0]-data.agent_positions[agent_id-1][0] #curent position - goal position(x axis)
+    dy=data.agent_goals[agent_id-1][1]-data.agent_positions[agent_id-1][1] #curent position - goal position(y axis)
     mag=(dx**2+dy**2)**.5
     if mag!=0:
         dx=dx/mag

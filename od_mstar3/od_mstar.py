@@ -67,7 +67,7 @@ def find_path(obs_map, init_pos, goals, recursive=True, inflation=1.0,
                         OD
     makespan          - minimize makespan (time to solution),
                         instead of minimizing time robots spend away
-                        from their robots
+                        from their goals
     col_set_memory    - remember previous step collision set, intended
                         to provide more efficient cached path
                         utillization.  True by default
@@ -76,7 +76,7 @@ def find_path(obs_map, init_pos, goals, recursive=True, inflation=1.0,
     if (col_checker is None or isinstance(col_checker,
                                           workspace_graph.Edge_Checker)):
         goals = tuple(map(tuple, goals))
-        init_pos = tuple(map(tuple, init_pos))
+        init_pos = tuple(map(tuple, init_pos)) #map is a function not the grid map:)
     global_move_list = []
     o = Od_Mstar(obs_map, goals, recursive=recursive, inflation=inflation,
                  astar=astar, connect_8=connect_8, full_space=full_space,
@@ -142,7 +142,7 @@ class Od_Mstar(object):
                             every expansion
         makespan          - minimize makespan (time to solution),
                             instead of minimizing time robots spend away
-                            from their robots
+                            from their goals
         col_set_memory    - remember previous step collision set,
                             intended to provide more efficient cached
                             path utillization.  False by default
