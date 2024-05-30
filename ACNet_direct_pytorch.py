@@ -10,6 +10,7 @@ KEEP_PROB1 = 1  # was 0.5
 KEEP_PROB2 = 1  # was 0.7
 RNN_SIZE = 512
 GOAL_REPR_SIZE = 12
+batch_size=32
 
 # Used to initialize weights for policy and value output layers
 def normalized_columns_initializer(std=1.0):
@@ -25,6 +26,11 @@ class ACNet(nn.Module):
         
         self.scope = scope
         # input should be integrated here.. Farhan
+        # Assuming GRID_SIZE is defined elsewhere
+        # self.inputs = torch.zeros((batch_size, 4, GRID_SIZE, GRID_SIZE), dtype=torch.float32)
+        # goal_pos = torch.zeros((batch_size, 3), dtype=torch.float32)
+        # Transpose the dimensions (0, 2, 3, 1)
+        # self.myinput = torch.transpose(self.inputs, 1, 3)
         
         # Convolutional layers
         self.conv1 = nn.Conv2d(4, RNN_SIZE//4, kernel_size=3, stride=1, padding=1)
@@ -37,10 +43,14 @@ class ACNet(nn.Module):
 
         # Fully connected layers
         self.fc_goal = nn.Linear(3, GOAL_REPR_SIZE)
-        self.fc_hidden = nn.Linear(RNN_SIZE, RNN_SIZE)
+        print("self.fc_goal",self.fc_goal)
+        self.fc1 = nn.Linear(RNN_SIZE, RNN_SIZE)
+        self.fc2 = nn.Linear(RNN_SIZE, RNN_SIZE)
+        self.dropout1 = nn.Dropout(p=1-KEEP_PROB1)
+        self.dropout2 = nn.Dropout(p=1-KEEP_PROB2)
         
         # LSTM layer
-        self.lstm = nn.LSTMCell(RNN_SIZE, RNN_SIZE)
+        self.lstm = nn.LSTM(RNN_SIZE, RNN_SIZE)
         
         # Output layers
         self.policy_layer = nn.Linear(RNN_SIZE, a_size)
@@ -57,8 +67,8 @@ class ACNet(nn.Module):
             if m.bias is not None:
                 m.bias.data.fill_(0)
     
-    def forward(self, inputs, goal_pos, hxs, cxs):
-        # print("inside forward")
+    def forward(self, inputs, goal_pos, training=True):
+
         x = F.relu(self.conv1(inputs))
         x = F.relu(self.conv1a(x))
         x = F.relu(self.conv1b(x))
@@ -70,19 +80,34 @@ class ACNet(nn.Module):
         x = F.relu(self.conv3(x))
         
         x = x.view(x.size(0), -1)
+        print(x.shape)
         goal_layer = F.relu(self.fc_goal(goal_pos))
-        x = torch.cat([x, goal_layer], 1)
-        x = F.relu(self.fc_hidden(x))
+        print("goal layer before",goal_layer.shape)
+        #convert it to a shape of 12x1
+        goal_layer=goal_layer.view(12,1)
+
+        hidden_input = torch.cat((x, goal_layer), 0)
+        hid_trans = hidden_input.permute(1,0)
+        h1 = self.fc1(hid_trans)
+        if training:
+            d1 = self.dropout1(h1)
+        h2 = self.fc2(d1)
+        if training:
+            d2 = self.dropout2(h2)
+        h3 = F.relu(d2 + hid_trans)
+
+        c_in = torch.zeros(1, RNN_SIZE)
+        h_in = torch.zeros(1, RNN_SIZE)
+
+        rnn_in=h3
+        lstm_out,(lstm_c, lstm_h) = self.lstm(rnn_in, (c_in, h_in))
         
-        hx, cx = self.lstm(x, (hxs, cxs))
-        x = hx
+        policy = F.softmax(self.policy_layer(lstm_out), dim=-1)
+        value = self.value_layer(lstm_out)
+        blocking = torch.sigmoid(self.blocking_layer(lstm_out))
+        on_goal = torch.sigmoid(self.on_goal_layer(lstm_out))
         
-        policy = F.softmax(self.policy_layer(x), dim=-1)
-        value = self.value_layer(x)
-        blocking = torch.sigmoid(self.blocking_layer(x))
-        on_goal = torch.sigmoid(self.on_goal_layer(x))
-        
-        return policy, value, (hx, cx), blocking, on_goal
+        return policy, value, (lstm_c, lstm_h), blocking, on_goal
 
     def evaluate_actions(self, inputs, goal_pos, hxs, cxs, actions):
         policy, value, (hx, cx), blocking, on_goal = self.forward(inputs, goal_pos, hxs, cxs)
