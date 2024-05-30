@@ -1,16 +1,17 @@
 #!/bin/bash
 
-#SBATCH --mem-per-cpu=64G 
-
 #SBATCH -J mapf 
 
 #SBATCH -o job_logs/mapf-%j.out 
 
 #SBATCH -e job_logs/mapf-%j.err
 
-#SBATCH -t 0-10:00:00
+#SBATCH -t 8:00:00
 #SBATCH --mail-type=END      # an email is send at the end of the job
-#SBATCH -n 1                 # 1 processor to be used
+               
+#SBATCH -N 2 # --n: no of processor to be used -- N:no of nodes used
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-node=1
 
 
 
@@ -19,8 +20,11 @@ module purge
 module load anaconda3/latest
 . $ANACONDA_HOME/etc/profile.d/conda.sh
 
-conda activate primal2
+which Xvfb
+
+/bin/Xvfb :1 -screen 0 1024x768x24 &
+export DISPLAY=:1
 
 python3 /home/noushad/Master_thesis/PRIMAL/DRLMAPF_A3C_RNN.py
 
-conda deactivate
+

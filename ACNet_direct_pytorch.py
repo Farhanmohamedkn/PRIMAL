@@ -10,6 +10,7 @@ KEEP_PROB1 = 1  # was 0.5
 KEEP_PROB2 = 1  # was 0.7
 RNN_SIZE = 512
 GOAL_REPR_SIZE = 12
+batch_size=32
 
 # Used to initialize weights for policy and value output layers
 def normalized_columns_initializer(std=1.0):
@@ -25,6 +26,11 @@ class ACNet(nn.Module):
         
         self.scope = scope
         # input should be integrated here.. Farhan
+        # Assuming GRID_SIZE is defined elsewhere
+        # self.inputs = torch.zeros((batch_size, 4, GRID_SIZE, GRID_SIZE), dtype=torch.float32)
+        # goal_pos = torch.zeros((batch_size, 3), dtype=torch.float32)
+        # Transpose the dimensions (0, 2, 3, 1)
+        # self.myinput = torch.transpose(self.inputs, 1, 3)
         
         # Convolutional layers
         self.conv1 = nn.Conv2d(4, RNN_SIZE//4, kernel_size=3, stride=1, padding=1)
@@ -37,6 +43,7 @@ class ACNet(nn.Module):
 
         # Fully connected layers
         self.fc_goal = nn.Linear(3, GOAL_REPR_SIZE)
+        print("self.fc_goal",self.fc_goal)
         self.fc_hidden = nn.Linear(RNN_SIZE, RNN_SIZE)
         
         # LSTM layer
@@ -58,7 +65,9 @@ class ACNet(nn.Module):
                 m.bias.data.fill_(0)
     
     def forward(self, inputs, goal_pos, hxs, cxs):
-        # print("inside forward")
+
+        print("inputs=",inputs.shape)
+        print("goal_pos",goal_pos.shape)
         x = F.relu(self.conv1(inputs))
         x = F.relu(self.conv1a(x))
         x = F.relu(self.conv1b(x))
@@ -70,7 +79,13 @@ class ACNet(nn.Module):
         x = F.relu(self.conv3(x))
         
         x = x.view(x.size(0), -1)
+        print(x.shape)
         goal_layer = F.relu(self.fc_goal(goal_pos))
+        print("goal layer before",goal_layer.shape)
+        #convert it to a shape of 12x1
+        goal_layer=goal_layer.view(12,1)
+        print("goal layer after reshaping",goal_layer.shape)
+
         x = torch.cat([x, goal_layer], 1)
         x = F.relu(self.fc_hidden(x))
         
