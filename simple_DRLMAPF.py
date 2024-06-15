@@ -1,16 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# # Pathfinding via Reinforcement and Imitation Multi-Agent Learning (PRIMAL)
-# 
-# While training is taking place, statistics on agent performance are available from Tensorboard. To launch it use:
-# 
-# `tensorboard --logdir train_primal`
-
-# In[3]:
-
-
-#this should be the thing, right?
 from __future__ import division
 
 import gym
@@ -194,7 +182,7 @@ for epoch in range(max_episodes):
             #     test = gameEnv._reset(i)
                 # print("Environment reseted after maximum steps taken by each agent")
             episode_frames = [ gameEnv._render(mode='rgb_array',screen_height=900,screen_width=900) ]
-            print("we are here 1st")
+            # print("we are here 1st")
             validActions   = gameEnv._listNextValidActions(agent_id,episode=step)
             p              = gameEnv.world.getPos(agent_id)
             on_goal        = gameEnv.world.goals[p[0],p[1]]==agent_id

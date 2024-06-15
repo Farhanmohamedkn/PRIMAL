@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "simple_DRLMAPF.py",
+            "program": "pytorch_DRLMAPF_A3C.py",
             "console": "integratedTerminal",
             // "pythonPath": "${workspaceFolder}/path_to_your_conda_env/bin/python",
             "env": {

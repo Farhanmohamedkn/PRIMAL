@@ -80,9 +80,9 @@ class ACNet(nn.Module):
         x = F.relu(self.conv3(x))
         
         x = x.view(x.size(0), -1)
-        print(x.shape)
+        # print(x.shape)
         goal_layer = F.relu(self.fc_goal(goal_pos))
-        print("goal layer before",goal_layer.shape)
+        # print("goal layer before",goal_layer.shape)
         #convert it to a shape of 12x1
         goal_layer=goal_layer.view(12,1)
 
@@ -99,17 +99,23 @@ class ACNet(nn.Module):
         c_in = torch.zeros(1, RNN_SIZE)
         h_in = torch.zeros(1, RNN_SIZE)
 
+        state_init = (c_in, h_in)
+
         rnn_in=h3
+
         lstm_out,(lstm_c, lstm_h) = self.lstm(rnn_in, (c_in, h_in))
+
+        state_out=(lstm_c, lstm_h) #tensorflow sending it in different shape
         
         policy = F.softmax(self.policy_layer(lstm_out), dim=-1)
         value = self.value_layer(lstm_out)
         blocking = torch.sigmoid(self.blocking_layer(lstm_out))
         on_goal = torch.sigmoid(self.on_goal_layer(lstm_out))
         
-        return policy, value, (lstm_c, lstm_h), blocking, on_goal
+        return policy, value, state_init,state_out, blocking, on_goal
 
     def evaluate_actions(self, inputs, goal_pos, hxs, cxs, actions):
+        print("we are here")
         policy, value, (hx, cx), blocking, on_goal = self.forward(inputs, goal_pos, hxs, cxs)
         log_probs = torch.log(policy.gather(1, actions.view(-1, 1)))
         entropy = -(policy * log_probs).sum(-1).mean()
